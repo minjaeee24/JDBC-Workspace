@@ -101,8 +101,17 @@ public class MemberView {
 		
 	}
 	
+	/**
+	 * 사용자에게 검색할 회원의 아이디를 입력받은 후 조회 요청하는 메소드
+	 */
 	public void selectByUserId() {
+		System.out.println("--- 회원 아이디로 검색 ---");
 		
+		System.out.println("검색할 회원의 아이디 : ");
+		String userId = sc.nextLine();
+		
+		// 입력한 유저 아이디값을 매개변수로 넘겨서 회원아이디 검색 요청
+		mc.selectByUserId(userId);
 	}
 	
 	public void selectByUserName() {

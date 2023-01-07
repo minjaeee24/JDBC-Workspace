@@ -1,11 +1,16 @@
 package com.kh.model.dao;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.InvalidPropertiesFormatException;
+import java.util.Properties;
 
 import com.kh.model.vo.Member;
 
@@ -16,6 +21,33 @@ import com.kh.model.vo.Member;
  *  DB에 직접 접근해서 SQL문을 실행하고, 수행결과 돌려받기 -> JDBC
  */
 public class MemberDao {
+	/*
+	 * 기존의 방식 : DAO클래스에 사용자가 요청할때마다 실행해야되는 SQL문을 자바 소스코드 내에 직접 명시적으로 작성함
+	 * 			=> 정적 코딩방식, 하드코딩
+	 * 문제점 : SQL구문을 수정해야할 경우 자바 소스코드를 수정하는 셈. 즉, 수정된 내용을 반영시키고자 한다면
+	 * 		  프로그램을 재구동해야함.
+	 * 해결방식 : SQL문들을 별도로 관리하는 외부포일(.XML)을 만들어서 실시간으로 이 파일에 기록된 SQL문들을 동적으로
+	 * 			읽어들여서 실행 => 동적 코딩방식
+	 * 
+	 */
+
+	private Properties prop = new Properties();
+	
+	public MemberDao() {
+		
+		try {
+			prop.loadFromXML(new FileInputStream("resources/query.xml"));
+		} catch (InvalidPropertiesFormatException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
 	/*
 	 * JDBC용 객체
 	 * - Connection : DB와의 연결정보를 담고 있는 객체(IP주고, PORT번호, 계정명, 비밀번호)
@@ -200,7 +232,66 @@ public class MemberDao {
 		return list;
 	}
 	
-	
+	public Member selectByUserId(String userId) {
+		
+		// 0) 필요한 변수 셋팅
+		// 조회된 회원에 대한 정보를 담을 변수
+		Member m = null;
+		
+		Connection conn = null;
+		Statement stmt = null;
+		ResultSet rset = null;
+		
+		// 실행할 sql문(완성된 형태, 세미콜론 X)
+		String sql = "SELECT * FROM MEMBER WHERE USERID = '" + userId + "'";
+		
+		try {
+			// 1) JDBC드라이버 등록
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+			// 오타가 있을 경우, ojdbc6.jar이 없을 경우 -> ClassNotFoundException이 발생함.
+			
+			// 2) Connection객체 생성 -> DB와 연결시키겠다
+			conn = DriverManager.getConnection("jdbc:oracle:thin:@khacademyDB1_medium?TNS_ADMIN=/Users/minjaeee/Desktop/dev");
+		
+			// 3) Statement객체 생성
+			stmt = conn.createStatement();
+			
+			// 4, 5) SQL문 실행시켜서 결과 받기
+			rset = stmt.executeQuery(sql);
+			
+			// 6_1) 현재 조회결과가 담긴 ResultSet에서 한 행씩 뽑아서 VO객체에 담기 => ID검색은 검색결과가 한 행이거나, 한 행도 없을 것
+			if(rset.next()) { // 커서를 한 행 아래로 슬쩍 움직여보고 조회결과가 있다면 true, 없다면 false
+				
+				// 조회된 한 행에 대한 모든 열의 데이터값을 뽑아서 하나의 Member객체에 담기
+				m = new Member(rset.getInt("USERNO"),
+							   rset.getString("USERID"),
+							   rset.getString("USERPWD"),
+							   rset.getString("USERNAME"),
+							   rset.getString("GENDER"),
+							   rset.getInt("AGE"),
+							   rset.getString("EMAIL"),
+							   rset.getString("PHONE"),
+							   rset.getString("ADDRESS"),
+							   rset.getString("HOBBY"),
+							   rset.getDate("ENROLLDATE"));
+				
+			}
+			
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				rset.close();
+				stmt.close();
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return m;
+	}
 	
 	
 	

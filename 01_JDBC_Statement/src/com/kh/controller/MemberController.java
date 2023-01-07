@@ -53,6 +53,23 @@ public class MemberController {
 			// 조회결과가 있을 경우 보게될 화면
 			new MemberView().displayList(list);
 		}
+	}
+
+	/**
+	 * 사용자의 아이디로 검색요청을 하는 메소드
+	 * @param userId : 사용자가 입력했던 검색하고자하는 아이디
+	 */
+	public void selectByUserId(String userId) {
+		
+		// 결과값을 담을 변수
+		// SELECT -> ResultSet -> Member
+		
+		Member m = new MemberDao().selectByUserId(userId);
+		
+		// 조회결과 검색된 데이터가 있는지 없는지 판단후 사용자가 보게될 화면 지정
+		if(m == null) { // 조회결과가 없다
+			new MemberView().displayNodata(userId + "");
+		}
 		
 		
 		
